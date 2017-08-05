@@ -11,6 +11,49 @@ const autoprefixer = require('autoprefixer');
 const ExtractTextPlugin = require('extract-text-webpack-plugin');
 const paths = require('./paths');
 const getEnv = require('./env');
+const sassHelpers = require('./sass');
+
+const loaders = [
+  'css-loader',
+  {
+    loader: require.resolve('postcss-loader'),
+    options: {
+      ident: 'postcss', // https://webpack.js.org/guides/migrating/#complex-options
+      plugins: () => [
+        require('postcss-flexbugs-fixes'),
+        autoprefixer({
+          browsers: [
+            '>1%',
+            'last 4 versions',
+            'Firefox ESR',
+            'not ie < 9', // React doesn't support IE8 anyway
+          ],
+          flexbox: 'no-2009',
+        }),
+      ],
+    },
+  },
+  {
+    loader: 'sass-loader',
+    options: {
+      functions: sassHelpers,
+      includePaths: [
+        path.resolve(paths.appPath, 'node_modules/ustyle/vendor/assets/stylesheets')
+      ],
+    },
+  },
+];
+
+function scssLoadersSelector(IS_NODE, IS_DEV) {
+  if (IS_NODE) return loaders;
+
+  return IS_DEV ?
+        ['style-loader', ...loaders] :
+        ExtractTextPlugin.extract({
+          fallback: require.resolve('style-loader'),
+          use: loaders,
+        });
+}
 
 // This is the Webpack configuration factory. It's the juice!
 module.exports = (
@@ -30,7 +73,7 @@ module.exports = (
   if (hasBabelRc) {
     console.log('Using .babelrc defined in your app root');
   } else {
-    mainBabelOptions.presets.push(require.resolve('../babel'));
+    mainBabelOptions.presets.push(require(require.resolve('../babel')));
   }
 
   // Define some useful shorthands.
@@ -43,6 +86,7 @@ module.exports = (
   const dotenv = getEnv(target, { clearConsole, host, port });
 
   const devServerPort = parseInt(dotenv.raw.PORT, 10) + 1;
+
   // This is our base webpack config.
   let config = {
     // Set webpack context to the current command's directory
@@ -77,7 +121,7 @@ module.exports = (
         { parser: { requireEnsure: false } },
         // Transform ES6 with Babel
         {
-          test: /\.js?$/,
+          test: /\.jsx?$/,
           loader: require.resolve('babel-loader'),
           include: [paths.appSrc],
           options: mainBabelOptions,
@@ -193,6 +237,11 @@ module.exports = (
                   ],
                 }),
         },
+        {
+            test: /\.scss$/,
+            exclude: [paths.appBuild],
+            use: scssLoadersSelector(IS_NODE, IS_DEV)
+        }
       ],
     },
   };

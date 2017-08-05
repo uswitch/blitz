@@ -40,7 +40,6 @@ module.exports = {
   appPackageJson: resolveApp('package.json'),
   appServerIndexJs: resolveApp('src'),
   appClientIndexJs: resolveApp('src/client'),
-  testsSetup: resolveApp('src/setupTests.js'),
   appBabelRc: resolveApp('.babelrc'),
   appBlitzConfig: resolveApp('blitz.config.js'),
   nodePaths: nodePaths,
