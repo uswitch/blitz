@@ -1,6 +1,6 @@
 {
   "name": "blitz",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Build isomorphic Javascript applications with ease.",
   "repository": "git@github.com:uswitch/blitz.git",
   "author": "Banking team <banking@uswitch.com>",
