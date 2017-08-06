@@ -9,50 +9,79 @@ const StartServerPlugin = require('start-server-webpack-plugin');
 const FriendlyErrorsPlugin = require('razzle-dev-utils/FriendlyErrorsPlugin');
 const autoprefixer = require('autoprefixer');
 const ExtractTextPlugin = require('extract-text-webpack-plugin');
+const BabiliPlugin = require("babili-webpack-plugin");
 const paths = require('./paths');
 const getEnv = require('./env');
 const sassHelpers = require('./sass');
 
-const loaders = [
-  'css-loader',
-  {
-    loader: require.resolve('postcss-loader'),
-    options: {
-      ident: 'postcss', // https://webpack.js.org/guides/migrating/#complex-options
-      plugins: () => [
-        require('postcss-flexbugs-fixes'),
-        autoprefixer({
-          browsers: [
-            '>1%',
-            'last 4 versions',
-            'Firefox ESR',
-            'not ie < 9', // React doesn't support IE8 anyway
-          ],
-          flexbox: 'no-2009',
-        }),
-      ],
+const loaders = ({ minify } = { minify: false }) => {
+  return [
+    {
+      loader: require.resolve('css-loader'),
+      options: {
+        minimize: minify,
+      },
     },
-  },
-  {
-    loader: 'sass-loader',
-    options: {
-      functions: sassHelpers,
-      includePaths: [
-        path.resolve(paths.appPath, 'node_modules/ustyle/vendor/assets/stylesheets')
-      ],
+    {
+      loader: require.resolve('postcss-loader'),
+      options: {
+        ident: 'postcss', // https://webpack.js.org/guides/migrating/#complex-options
+        plugins: () => [
+          require('postcss-flexbugs-fixes'),
+          autoprefixer({
+            browsers: [
+              '>1%',
+              'last 4 versions',
+              'Firefox ESR',
+              'not ie < 9', // React doesn't support IE8 anyway
+            ],
+            flexbox: 'no-2009',
+          }),
+        ],
+      },
     },
+  ]
+};
+
+const sassLoader = {
+  loader: 'sass-loader',
+  options: {
+    functions: sassHelpers,
+    includePaths: [
+      path.resolve(paths.appPath, 'node_modules/ustyle/vendor/assets/stylesheets')
+    ],
   },
-];
+};
 
 function scssLoadersSelector(IS_NODE, IS_DEV) {
-  if (IS_NODE) return loaders;
+  if (IS_NODE) return [...loaders({ minify: true }), sassLoader];
 
   return IS_DEV ?
-        ['style-loader', ...loaders] :
+        ['style-loader', ...loaders(), sassLoader] :
         ExtractTextPlugin.extract({
           fallback: require.resolve('style-loader'),
-          use: loaders,
+          use: [...loaders({ minify: true }), sassLoader],
         });
+}
+
+function uglifyPlugin() {
+  return new BabiliPlugin({}, { comments: false });
+  // // Uglify/compress and optimize our JS for production, screw ie8 when
+  // // possible, React only works > ie9 anyway
+  // new webpack.optimize.UglifyJsPlugin({
+  //   compress: {
+  //     warnings: false,
+  //     // Disabled because of an issue with Uglify breaking seemingly valid code:
+  //     // https://github.com/facebookincubator/create-react-app/issues/2376
+  //     // Pending further investigation:
+  //     // https://github.com/mishoo/UglifyJS2/issues/2011
+  //     comparisons: false,
+  //   },
+  //   output: {
+  //     comments: false,
+  //   },
+  //   sourceMap: true,
+  // }),
 }
 
 // This is the Webpack configuration factory. It's the juice!
@@ -182,59 +211,11 @@ module.exports = (
             : IS_DEV
               ? [
                   'style-loader',
-                  {
-                    loader: require.resolve('css-loader'),
-                    options: {
-                      importLoaders: 1,
-                    },
-                  },
-                  {
-                    loader: require.resolve('postcss-loader'),
-                    options: {
-                      ident: 'postcss', // https://webpack.js.org/guides/migrating/#complex-options
-                      plugins: () => [
-                        require('postcss-flexbugs-fixes'),
-                        autoprefixer({
-                          browsers: [
-                            '>1%',
-                            'last 4 versions',
-                            'Firefox ESR',
-                            'not ie < 9', // React doesn't support IE8 anyway
-                          ],
-                          flexbox: 'no-2009',
-                        }),
-                      ],
-                    },
-                  },
+                  ...loaders(),
                 ]
               : ExtractTextPlugin.extract({
                   fallback: require.resolve('style-loader'),
-                  use: [
-                    {
-                      loader: require.resolve('css-loader'),
-                      options: {
-                        importLoaders: 1,
-                      },
-                    },
-                    {
-                      loader: require.resolve('postcss-loader'),
-                      options: {
-                        ident: 'postcss', // https://webpack.js.org/guides/migrating/#complex-options
-                        plugins: () => [
-                          require('postcss-flexbugs-fixes'),
-                          autoprefixer({
-                            browsers: [
-                              '>1%',
-                              'last 4 versions',
-                              'Firefox ESR',
-                              'not ie < 9', // React doesn't support IE8 anyway
-                            ],
-                            flexbox: 'no-2009',
-                          }),
-                        ],
-                      },
-                    },
-                  ],
+                  use: [...loaders({ minify: true })],
                 }),
         },
         {
@@ -383,22 +364,7 @@ module.exports = (
         ...config.plugins,
         // Define production environment vars
         new webpack.DefinePlugin(dotenv.stringified),
-        // Uglify/compress and optimize our JS for production, screw ie8 when
-        // possible, React only works > ie9 anyway
-        new webpack.optimize.UglifyJsPlugin({
-          compress: {
-            warnings: false,
-            // Disabled because of an issue with Uglify breaking seemingly valid code:
-            // https://github.com/facebookincubator/create-react-app/issues/2376
-            // Pending further investigation:
-            // https://github.com/mishoo/UglifyJS2/issues/2011
-            comparisons: false,
-          },
-          output: {
-            comments: false,
-          },
-          sourceMap: true,
-        }),
+        uglifyPlugin(),
         // Extract our CSS into a files.
         new ExtractTextPlugin({
           filename: 'static/css/[name].[contenthash:8].css',
