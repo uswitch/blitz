@@ -9,7 +9,7 @@ const StartServerPlugin = require('start-server-webpack-plugin');
 const FriendlyErrorsPlugin = require('razzle-dev-utils/FriendlyErrorsPlugin');
 const autoprefixer = require('autoprefixer');
 const ExtractTextPlugin = require('extract-text-webpack-plugin');
-const BabiliPlugin = require("babili-webpack-plugin");
+const MinifyPlugin = require("babel-minify-webpack-plugin");
 const paths = require('./paths');
 const getEnv = require('./env');
 const sassHelpers = require('./sass');
@@ -65,7 +65,7 @@ function scssLoadersSelector(IS_NODE, IS_DEV) {
 }
 
 function uglifyPlugin() {
-  return new BabiliPlugin({}, { comments: false });
+  return new MinifyPlugin({}, { comments: false });
 }
 
 // This is the Webpack configuration factory. It's the juice!
