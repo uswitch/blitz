@@ -272,6 +272,11 @@ module.exports = (
         path: paths.appBuild,
         filename: 'assets.json',
       }),
+      // this assumes your vendor imports exist in the node_modules directory
+      new webpack.optimize.CommonsChunkPlugin({
+        name: 'vendor',
+        minChunks: module => module.context && module.context.indexOf('node_modules') !== -1
+      }),
     ];
 
     if (IS_DEV) {
