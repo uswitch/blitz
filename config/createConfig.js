@@ -231,7 +231,7 @@ module.exports = (
     // Specify webpack Node.js output path and filename
     config.output = {
       path: paths.appBuild,
-      publicPath: (IS_DEV && `http://${dotenv.raw.HOST}:${devServerPort}/`) || process.env.BLITZ_ASSET_HOST_URL + process.env.BLITZ_ASSET_HOST_PATH || '/',
+      publicPath: (IS_DEV && `http://${dotenv.raw.HOST}:${devServerPort}/`) || process.env.BLITZ_ASSET_HOST_URL + process.env.BLITZ_ASSET_HOST_PATH + '/' || '/',
       filename: 'server.js',
     };
     // Add some plugins...
