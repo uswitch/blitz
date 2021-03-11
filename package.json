@@ -52,7 +52,7 @@
     "postcss-flexbugs-fixes": "^3.0.0",
     "postcss-loader": "^2.0.5",
     "razzle-dev-utils": "^0.7.3",
-    "react-dev-utils": "^3.0.0",
+    "react-dev-utils": "^11.0.4",
     "sass-loader": "^6.0.6",
     "start-server-webpack-plugin": "^2.2.0",
     "style-loader": "^0.17.0",
